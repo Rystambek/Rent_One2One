@@ -19,7 +19,8 @@ def to_rent(rent:Rent_car) -> dict:
 class RentView(View):
     def get(self,request:HttpRequest,id) -> JsonResponse:
         try:
-            rent = Rent_car.objects.get(id=id)
+            car = Car.objects.get(id = id)
+            rent = Rent_car.objects.get(car = car)
         except ObjectDoesNotExist:
             return JsonResponse({'status': 'object does not exist!'})
 
@@ -29,8 +30,7 @@ class RentView(View):
         data_json = request.body.decode()
         data = json.loads(data_json)
 
-        car_id = Car.objects.get(id=id)
-        car = to_dict(car_id)['id']
+        car = Car.objects.get(id = id)
 
         if not data.get('rent_number'):
             return JsonResponse({'status': 'rent_number is required!'})
@@ -42,7 +42,7 @@ class RentView(View):
             return JsonResponse({'status': 'model is required!'})
         
         rent = Rent_car.objects.create(
-            car_id = car,
+            car_id = car.pk,
             rent_number = data['rent_number'],
             car_number = data['car_number'],
             car_yoqilgi = data['car_yoqilgi'],
@@ -54,7 +54,8 @@ class RentView(View):
     
     def put(self, request:HttpRequest,id) -> JsonResponse:
         try:
-            rent = Rent_car.objects.get(id = id)
+            car = Car.objects.get(id = id)
+            rent = Rent_car.objects.get(car = car)
         except ObjectDoesNotExist:
             return JsonResponse({'status': 'object does not exist!'})
         
@@ -76,7 +77,8 @@ class RentView(View):
     
     def delete(self, request:HttpRequest,id) -> JsonResponse:
         try:
-            rent = Rent_car.objects.get(id = id)
+            car = Car.objects.get(id = id)
+            rent = Rent_car.objects.get(car = car)
 
         except ObjectDoesNotExist:
             return JsonResponse({'status': 'object does not exist!'})
@@ -84,3 +86,19 @@ class RentView(View):
         rent.delete()
 
         return JsonResponse({'status':'ok'})
+    
+def all(request:HttpRequest)->JsonResponse:
+    car_all = Car.objects.all()
+
+    result = []
+    for car in car_all:
+        car_data = to_dict(car)
+        try:
+            rent = Rent_car.objects.get(car = car)
+            car_data['rent'] = to_rent(rent)
+        except ObjectDoesNotExist:
+            car_data['rent'] = None
+            
+        result.append(car_data)
+
+    return JsonResponse({'result':result})
